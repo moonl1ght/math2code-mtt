@@ -3,7 +3,7 @@
 # Compiler settings
 CXX = g++
 NVCC = nvcc
-TARGET = vector_add
+TARGET = math2code_mtt
 
 # Directories
 SRC_DIR = src

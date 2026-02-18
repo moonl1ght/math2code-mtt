@@ -18,6 +18,24 @@
                 "showReuseMessage": false,
                 "clear": false
             }
+        },
+        {
+            "label": "Build CUDA Release",
+            "type": "shell",
+            "command": "make rebuild CXXFLAGS='-std=c++20 -Wall -O2 -DNDEBUG' CUDA_FLAGS='-std=c++20 -arch=sm_89 -O2'",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc", "$nvcc"],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            }
         }
     ]
 }
