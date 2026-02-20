@@ -36,7 +36,14 @@ __global__ void transpose(
     if( myRow < m && myCol < n ) {
         const int thread_y_idx = tileY + threadIdx.y;
         const int thread_x_idx = tileX + threadIdx.x;
-        block_data[threadIdx.x][threadIdx.y] = input[thread_y_idx * n + thread_x_idx];
+        const int stride_y = blockDim.y * gridDim.y;
+        const int stride_x = blockDim.x * gridDim.x;
+        for (int i = thread_y_idx; i < m; i += stride_y) {
+            for (int j = thread_x_idx; j < n; j += stride_x) {
+                block_data[threadIdx.x][threadIdx.y] = input[i * n + j];
+            }
+        }
+        // block_data[threadIdx.x][threadIdx.y] = input[thread_y_idx * n + thread_x_idx];
     }
 
     // wait till all threads in the block have loaded their data into shared memory
@@ -47,8 +54,14 @@ __global__ void transpose(
     if( myRowSave < m && myColSave < n ) {
         const int thread_y_idx = tileY + threadIdx.x;
         const int thread_x_idx = tileX + threadIdx.y;
-        const int transposed_index = thread_x_idx * m + thread_y_idx;
-        output[transposed_index] = block_data[threadIdx.y][threadIdx.x];
+        const int stride_y = blockDim.y * gridDim.y;
+        const int stride_x = blockDim.x * gridDim.x;
+        for (int i = thread_x_idx; i < m; i += stride_x) {
+            for (int j = thread_y_idx; j < n; j += stride_y) {
+                const int transposed_index = i * m + j;
+                output[transposed_index] = block_data[threadIdx.y][threadIdx.x];
+            }
+        }
     }
 }
 
