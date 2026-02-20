@@ -118,6 +118,8 @@ public:
     std::unique_ptr<Matrix> transpose_cpu() const;
     std::unique_ptr<Matrix> transpose_gpu() const;
     std::unique_ptr<Matrix> transpose_naive_gpu() const;
+    std::unique_ptr<Matrix> transpose_gpu(float& gpu_time) const;
+    std::unique_ptr<Matrix> transpose_naive_gpu(float& gpu_time) const;
 
     bool operator==(const Matrix& other) const {
         if (_rows != other._rows || _cols != other._cols) {

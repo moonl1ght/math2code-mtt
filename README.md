@@ -14,6 +14,24 @@ Introduces core CUDA concepts through vector addition:
 - **Benchmark** - Compares CPU vs GPU performance on 50M elements, measuring total time (with memory transfers) and kernel-only time.
 - **Device Info** - Queries and displays GPU properties (SMs, compute capability, memory, threading limits).
 
+### Lesson 2 - Shared Memory: Histogram
+
+Demonstrates shared memory atomics through histogram computation:
+
+- **Histogram** - Bins 10 random integers into 10 buckets using the optimized kernel.
+- **Benchmark** - Compares CPU vs naive GPU (global atomics) vs optimized GPU (shared memory atomics + single global reduce) on 50M elements using CUDA events.
+
+### Lesson 2.1 - Shared Memory: Matrix Transpose
+
+Demonstrates how shared memory eliminates uncoalesced writes in matrix transpose:
+
+- **Transpose** - Transposes a 3×3 matrix and prints the result to verify correctness.
+- **Benchmark** - Compares three implementations on a 4096×4096 float matrix using CUDA events for GPU kernel timing and `std::chrono` for CPU timing:
+  - **CPU** - Naive nested-loop transpose.
+  - **GPU naive** - Each thread reads and writes global memory directly, causing uncoalesced writes on the output.
+  - **GPU shared memory** - Tiles are loaded into shared memory (with +1 column padding to avoid bank conflicts), then written out in a coalesced pattern.
+  - Verifies all three results match, then reports time (ms) and speedups.
+
 ## Prerequisites
 
 - NVIDIA GPU with CUDA support

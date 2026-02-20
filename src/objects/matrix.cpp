@@ -36,6 +36,26 @@ std::unique_ptr<Matrix> Matrix::transpose_gpu() const {
     return transposed;
 }
 
+std::unique_ptr<Matrix> Matrix::transpose_gpu(float& gpu_time) const {
+    if (_gpu_data == nullptr) {
+        throw std::runtime_error("GPU memory not allocated");
+    }
+    auto transposed = std::make_unique<Matrix>(_cols, _rows);
+    transposed->allocate_gpu_memory();
+    cudaEvent_t ev_start, ev_stop;
+    cudaEventCreate(&ev_start);
+    cudaEventCreate(&ev_stop);
+    cudaEventRecord(ev_start);
+    launchTranspose(_rows, _cols, transposed->_gpu_data, _gpu_data);
+    cudaEventRecord(ev_stop);
+    cudaEventSynchronize(ev_stop);
+    cudaEventElapsedTime(&gpu_time, ev_start, ev_stop);
+    transposed->copy_to_host();
+    cudaEventDestroy(ev_start);
+    cudaEventDestroy(ev_stop);
+    return transposed;
+}
+
 std::unique_ptr<Matrix> Matrix::transpose_naive_gpu() const {
     if (_gpu_data == nullptr) {
         std::runtime_error("GPU memory not allocated");
@@ -44,5 +64,25 @@ std::unique_ptr<Matrix> Matrix::transpose_naive_gpu() const {
     transposed->allocate_gpu_memory();
     launchNaiveTranspose(_rows, _cols, transposed->_gpu_data, _gpu_data);
     transposed->copy_to_host();
+    return transposed;
+}
+
+std::unique_ptr<Matrix> Matrix::transpose_naive_gpu(float& gpu_time) const {
+    if (_gpu_data == nullptr) {
+        throw std::runtime_error("GPU memory not allocated");
+    }
+    auto transposed = std::make_unique<Matrix>(_cols, _rows);
+    transposed->allocate_gpu_memory();
+    cudaEvent_t ev_start, ev_stop;
+    cudaEventCreate(&ev_start);
+    cudaEventCreate(&ev_stop);
+    cudaEventRecord(ev_start);
+    launchNaiveTranspose(_rows, _cols, transposed->_gpu_data, _gpu_data);
+    cudaEventRecord(ev_stop);
+    cudaEventSynchronize(ev_stop);
+    cudaEventElapsedTime(&gpu_time, ev_start, ev_stop);
+    transposed->copy_to_host();
+    cudaEventDestroy(ev_start);
+    cudaEventDestroy(ev_stop);
     return transposed;
 }
