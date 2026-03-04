@@ -22,12 +22,64 @@ public:
             shape.begin(), shape.end(), 1, std::multiplies<int>()
         );
         calculate_strides();
-        _data = new float[_total_size];
+        // Allocate pinned memory
+        cudaMallocHost((void**)&_data, _total_size * sizeof(float));
+    };
+
+    Tensor(std::vector<int> shape, std::vector<float> data): _shape(shape) {
+        _total_size = std::accumulate(
+            shape.begin(), shape.end(), 1, std::multiplies<int>()
+        );
+        if (data.size() != _total_size) {
+            throw std::runtime_error("Data size does not match shape");
+        }
+        calculate_strides();
+        // Allocate pinned memory
+        cudaMallocHost((void**)&_data, _total_size * sizeof(float));
+        for (int i = 0; i < _total_size; i++) {
+            _data[i] = data[i];
+        }
     };
 
     ~Tensor() {
-        delete[] _data;
+        cudaFreeHost(_data);
     };
+
+    Tensor(Tensor&& other) noexcept
+        : _shape(other._shape)
+        , _strides(other._strides)
+        , _total_size(other._total_size)
+        , _data(other._data)
+        , _gpu_data(other._gpu_data) {
+        other._shape = std::vector<int>();
+        other._strides = std::vector<int>();
+        other._total_size = 0;
+        other._data = nullptr;
+        other._gpu_data = nullptr;
+    }
+    
+    Tensor& operator=(Tensor&& other) noexcept {
+        if (this == &other) {
+            return *this;
+        }
+        _shape = other._shape;
+        _strides = other._strides;
+        _total_size = other._total_size;
+        _data = other._data;
+        _gpu_data = other._gpu_data;
+        other._shape = std::vector<int>();
+        other._strides = std::vector<int>();
+        other._total_size = 0;
+        other._data = nullptr;
+        other._gpu_data = nullptr;
+        return *this;
+    }
+
+    Tensor(const Tensor& other) = delete;
+    Tensor& operator=(const Tensor& other) = delete;
+
+    float* data() const { return _data; }
+    float* gpu_data() const { return _gpu_data; }
 
     void set(std::vector<int> indices, float value);
     float get(std::vector<int> indices) const;
@@ -39,9 +91,41 @@ public:
     int total_size() const { return _total_size; }
 
     void print(bool inline_mode = false);
-    void allocate_gpu_memory() { };
-    void copy_to_gpu() { };
-    void copy_to_host() { };
+
+    std::tuple<int, int> last_two_dimensions() const { 
+        if (_shape.size() < 2) {
+            throw std::runtime_error("Tensor has less than 2 dimensions");
+        }
+        return std::make_tuple(_shape[_shape.size() - 2], _shape[_shape.size() - 1]);
+    }
+
+    int batch_size() const { 
+        if (_shape.size() < 2) {
+            return 1;
+        }
+        return std::accumulate(_shape.begin(), _shape.end() - 2, 1, std::multiplies<int>()); 
+    }
+
+    void allocate_gpu_memory() { 
+        if (_gpu_data != nullptr) {
+            return;
+        }
+        cudaMalloc(&_gpu_data, _total_size * sizeof(float));
+    };
+
+    void copy_to_gpu() { 
+        if (_gpu_data == nullptr) {
+            throw std::runtime_error("GPU memory not allocated");
+        }
+        cudaMemcpy(_gpu_data, _data, _total_size * sizeof(float), cudaMemcpyHostToDevice);
+    };
+
+    void copy_to_host() { 
+        if (_gpu_data == nullptr) {
+            throw std::runtime_error("GPU memory not allocated");
+        }
+        cudaMemcpy(_data, _gpu_data, _total_size * sizeof(float), cudaMemcpyDeviceToHost);
+    };
 
 private:
     std::vector<int> _shape;

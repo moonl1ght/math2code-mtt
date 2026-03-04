@@ -27,7 +27,7 @@ void Tensor::set(std::vector<int> indices, float value) {
 void Tensor::print(bool inline_mode) {
     if (inline_mode) {
         for (int i = 0; i < _total_size; i++) {
-            std::cout << " " << std::fixed << std::setprecision(2) << _data[i] << " ";
+            std::cout << " " << std::fixed << std::setprecision(4) << _data[i] << " ";
         }
         std::cout << std::endl;
     } else {
@@ -40,7 +40,7 @@ void Tensor::print(bool inline_mode) {
                     std::cout << "[";
                 }
             }
-            std::cout << " " << std::fixed << std::setprecision(2) << _data[i] << " ";
+            std::cout << " " << std::fixed << std::setprecision(4) << _data[i] << " ";
             index = 1;
             bool was_closed = false;
             for (std::vector<int>::size_type j = 1; j < _shape.size(); j++) {
