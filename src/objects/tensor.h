@@ -86,18 +86,20 @@ public:
     void squeeze(); // remove the dimension of size 1
     void unsqueeze(int index); // add the dimension of size 1
 
+    void align_broadcast_to_higher_dimensions(const Tensor& other) {
+        if (other.shape().size() < shape().size()) {
+            throw std::runtime_error("Other tensor has less dimensions than this tensor");
+        }
+        while (shape().size() < other.shape().size()) {
+            this->unsqueeze(0);
+        }
+    }
+
     std::vector<int> shape() const { return _shape; }
     std::vector<int> strides() const { return _strides; }
     int total_size() const { return _total_size; }
 
     void print(bool inline_mode = false);
-
-    std::tuple<int, int> last_two_dimensions() const { 
-        if (_shape.size() < 2) {
-            throw std::runtime_error("Tensor has less than 2 dimensions");
-        }
-        return std::make_tuple(_shape[_shape.size() - 2], _shape[_shape.size() - 1]);
-    }
 
     int batch_size() const { 
         if (_shape.size() < 2) {
