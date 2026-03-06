@@ -43,6 +43,7 @@ public:
 
     ~Tensor() {
         cudaFreeHost(_data);
+        free_gpu_memory();
     };
 
     Tensor(Tensor&& other) noexcept
@@ -108,6 +109,11 @@ public:
         return std::accumulate(_shape.begin(), _shape.end() - 2, 1, std::multiplies<int>()); 
     }
 
+    void prepare_for_gpu_work() {
+        allocate_gpu_memory();
+        copy_to_gpu();
+    }
+
     void allocate_gpu_memory() { 
         if (_gpu_data != nullptr) {
             return;
@@ -143,6 +149,14 @@ public:
             }
         }
         return true;
+    }
+
+    void free_gpu_memory() {
+        if (_gpu_data == nullptr) {
+            return;
+        }
+        cudaFree(_gpu_data);
+        _gpu_data = nullptr;
     }
 
 private:

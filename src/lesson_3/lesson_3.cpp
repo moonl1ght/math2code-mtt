@@ -1,6 +1,6 @@
 #include "lesson_3.h"
 #include "../../src/objects/tensor.h"
-#include "../../src/operations/Operations.h"
+#include "../../src/operations/MatmulOperation.h"
 
 void tensor_test();
 void tensor_matmul_naive_test();
@@ -24,7 +24,7 @@ void tensor_matmul_naive_test() {
     
     auto A = std::make_unique<Tensor>(std::vector<int>{2, 2}, std::vector<float>{1, 2, 3, 4});
     auto B = std::make_unique<Tensor>(std::vector<int>{2, 2}, std::vector<float>{5, 6, 7, 8});
-    auto C = Operations::naive_matmul_nd(*A, *B);
+    auto C = MatmulOperation::naive_matmul_nd(*A, *B);
     std::cout << "A: " << std::endl;
     A->print(true);
     A->print();
@@ -40,9 +40,12 @@ void tensor_matmul_test() {
     std::cout << "Tensor Matmul Test" << std::endl;
     
     auto A = Tensor::create_random({1, 3, 256, 256});
+    A->prepare_for_gpu_work();
     auto B = Tensor::create_random({3, 1, 256, 256});
-    auto C_cpu = Operations::matmul_cpu(*A, *B);
-    auto C = Operations::matmul_nd(*A, *B);
+    B->prepare_for_gpu_work();
+    auto C_cpu = MatmulOperation::matmul_cpu(*A, *B);
+    auto C = MatmulOperation::matmul_nd(*A, *B);
+    C->copy_to_host();
     if (*C == *C_cpu) {
         std::cout << "C == C_cpu" << std::endl;
     } else {

@@ -40,3 +40,6 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# Data
+data/
