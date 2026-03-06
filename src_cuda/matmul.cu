@@ -1,5 +1,6 @@
 #include "matmul.cuh"
 #include <cuda/cmath>
+#include <stdio.h>
 
 #define ThreadsPerBlock_x 32
 #define ThreadsPerBlock_y 32
@@ -78,7 +79,7 @@ __global__ void tiled_matmul_broadcast_kernel(
     // Loop over the tiles of the input matrices
     for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t) {
         
-        // 1. Load tiles into shared memory (with boundary checks)
+        // Load tiles into shared memory (with boundary checks)
         if (row < M && (t * TILE_SIZE + tx) < K)
             tileA[ty][tx] = A[offsetA + row * K + t * TILE_SIZE + tx];
         else
@@ -92,7 +93,7 @@ __global__ void tiled_matmul_broadcast_kernel(
         // Wait for all threads to finish loading
         __syncthreads();
 
-        // 2. Compute the product for this tile
+        // Compute the product for this tile
         for (int k = 0; k < TILE_SIZE; ++k) {
             sum += tileA[ty][k] * tileB[k][tx];
         }
@@ -101,7 +102,6 @@ __global__ void tiled_matmul_broadcast_kernel(
         __syncthreads();
     }
 
-    // 3. Write result to Global Memory
     if (row < M && col < N) {
         C[offsetC + row * N + col] = sum;
     }

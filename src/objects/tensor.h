@@ -129,6 +129,22 @@ public:
         cudaMemcpy(_data, _gpu_data, _total_size * sizeof(float), cudaMemcpyDeviceToHost);
     };
 
+    bool operator==(const Tensor& other) const {
+        return approx_equal(other, 1e-5f);
+    }
+
+    bool approx_equal(const Tensor& other, float epsilon = 1e-5f) const {
+        if (shape() != other.shape()) {
+            return false;
+        }
+        for (int i = 0; i < total_size(); i++) {
+            if (std::abs(data()[i] - other.data()[i]) > epsilon) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 private:
     std::vector<int> _shape;
     std::vector<int> _strides;

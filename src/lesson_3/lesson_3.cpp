@@ -39,9 +39,15 @@ void tensor_matmul_naive_test() {
 void tensor_matmul_test() {
     std::cout << "Tensor Matmul Test" << std::endl;
     
-    auto A = std::make_unique<Tensor>(std::vector<int>{1,3, 5, 5});
-    auto B = std::make_unique<Tensor>(std::vector<int>{3, 1,5, 5});
+    auto A = Tensor::create_random({1, 3, 256, 256});
+    auto B = Tensor::create_random({3, 1, 256, 256});
+    auto C_cpu = Operations::matmul_cpu(*A, *B);
     auto C = Operations::matmul_nd(*A, *B);
+    if (*C == *C_cpu) {
+        std::cout << "C == C_cpu" << std::endl;
+    } else {
+        std::cout << "C != C_cpu" << std::endl;
+    }
     // std::cout << "A: " << std::endl;
     // A->print(true);
     // A->print();
@@ -51,4 +57,7 @@ void tensor_matmul_test() {
     // std::cout << "C: " << std::endl;
     // C->print(true);
     // C->print();
+    // std::cout << "C_cpu: " << std::endl;
+    // C_cpu->print(true);
+    // C_cpu->print();
 }

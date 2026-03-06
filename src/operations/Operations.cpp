@@ -115,7 +115,7 @@ std::unique_ptr<Tensor> Operations::matmul_nd(Tensor& A, Tensor& B) {
     launchTiledMatmul(
         A.gpu_data(), B.gpu_data(), C->gpu_data(), 
         M, K_A, N, 
-        A.batch_size(), num_batch_dims, out_batch_shape, a_batch_strides, b_batch_strides, c_batch_strides
+        batch_size, num_batch_dims, out_batch_shape, a_batch_strides, b_batch_strides, c_batch_strides
     );
     cudaDeviceSynchronize();
     C->copy_to_host();
@@ -127,5 +127,87 @@ std::unique_ptr<Tensor> Operations::matmul_nd(Tensor& A, Tensor& B) {
     cudaFree(b_batch_strides_dev);
     cudaFree(c_batch_strides_dev);
     cudaFree(out_batch_shape_dev);
+    return C;
+}
+
+std::unique_ptr<Tensor> Operations::matmul_cpu(Tensor& A, Tensor& B) {
+    if (A.shape().size() == 1 && B.shape().size() == 1) {
+        A.unsqueeze(0);
+        B.unsqueeze(0);
+    } else if (A.shape().size() < B.shape().size()) {
+        A.align_broadcast_to_higher_dimensions(B);
+    } else if (A.shape().size() > B.shape().size()) {
+        B.align_broadcast_to_higher_dimensions(A);
+    }
+
+    int M = *(A.shape().end() - 2);
+    int K_A = A.shape().back();
+    int K_B = *(B.shape().end() - 2);
+    int N = B.shape().back();
+    if (K_A != K_B) {
+        throw std::runtime_error("Inner dimensions of A and B do not match");
+    }
+    int K = K_A;
+
+    int num_batch_dims = (int)A.shape().size() - 2;
+    int batch_size = 1;
+    std::vector<int> output_shape;
+    for (int i = 0; i < num_batch_dims; i++) {
+        if (A.shape()[i] != B.shape()[i]) {
+            if (A.shape()[i] != 1 && B.shape()[i] != 1) {
+                throw std::runtime_error("Batch dimensions of A and B do not match");
+            }
+        }
+        int max_dim = std::max(A.shape()[i], B.shape()[i]);
+        batch_size *= max_dim;
+        output_shape.push_back(max_dim);
+    }
+    output_shape.push_back(M);
+    output_shape.push_back(N);
+
+    auto C = std::make_unique<Tensor>(output_shape);
+
+    // Batch strides with broadcast: stride 0 for size-1 dims
+    std::vector<int> a_batch_strides(num_batch_dims);
+    std::vector<int> b_batch_strides(num_batch_dims);
+    std::vector<int> c_batch_strides(num_batch_dims);
+    for (int i = 0; i < num_batch_dims; i++) {
+        a_batch_strides[i] = A.shape()[i] == 1 ? 0 : A.strides()[i];
+        b_batch_strides[i] = B.shape()[i] == 1 ? 0 : B.strides()[i];
+        c_batch_strides[i] = C->strides()[i];
+    }
+
+    int a_row_stride = A.strides()[A.shape().size() - 2];
+    int b_row_stride = B.strides()[B.shape().size() - 2];
+    int c_row_stride = C->strides()[C->shape().size() - 2];
+
+    float* a = A.data();
+    float* b = B.data();
+    float* c = C->data();
+
+    for (int batch = 0; batch < batch_size; batch++) {
+        // Decompose flat batch index into per-dim offsets
+        int a_offset = 0, b_offset = 0, c_offset = 0;
+        int tmp = batch;
+        for (int d = num_batch_dims - 1; d >= 0; d--) {
+            int idx = tmp % output_shape[d];
+            tmp /= output_shape[d];
+            a_offset += idx * a_batch_strides[d];
+            b_offset += idx * b_batch_strides[d];
+            c_offset += idx * c_batch_strides[d];
+        }
+
+        for (int m = 0; m < M; m++) {
+            for (int n = 0; n < N; n++) {
+                float sum = 0.0f;
+                for (int k = 0; k < K; k++) {
+                    sum += a[a_offset + m * a_row_stride + k] *
+                           b[b_offset + k * b_row_stride + n];
+                }
+                c[c_offset + m * c_row_stride + n] = sum;
+            }
+        }
+    }
+
     return C;
 }
