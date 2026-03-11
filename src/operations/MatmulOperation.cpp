@@ -124,7 +124,6 @@ void MatmulOperation::matmul_inplace(Tensor& A, Tensor& B, Tensor& C) {
 }
 
 std::unique_ptr<Tensor> MatmulOperation::matmul_nd(Tensor& A, Tensor& B) {
-
     auto matmul_info = get_matmul_info(A, B);
     auto C = std::make_unique<Tensor>(matmul_info.output_shape);
     C->allocate_gpu_memory();

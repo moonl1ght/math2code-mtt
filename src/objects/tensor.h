@@ -17,6 +17,22 @@ public:
         unsigned int seed = 0
     );
 
+    static std::unique_ptr<Tensor> create_zeros(std::vector<int> shape) {
+        auto tensor = std::make_unique<Tensor>(shape);
+        for (int i = 0; i < tensor->_total_size; i++) {
+            tensor->_data[i] = 0.0f;
+        }
+        return tensor;
+    }
+
+    static std::unique_ptr<Tensor> create_ones(std::vector<int> shape) {
+        auto tensor = std::make_unique<Tensor>(shape);
+        for (int i = 0; i < tensor->_total_size; i++) {
+            tensor->_data[i] = 1.0f;
+        }
+        return tensor;
+    }
+
     Tensor(std::vector<int> shape): _shape(shape) {
         _total_size = std::accumulate(
             shape.begin(), shape.end(), 1, std::multiplies<int>()
@@ -81,6 +97,7 @@ public:
 
     float* data() const { return _data; }
     float* gpu_data() const { return _gpu_data; }
+    bool is_gpu_allocated() const { return _gpu_data != nullptr; }
 
     void set(std::vector<int> indices, float value);
     float get(std::vector<int> indices) const;
