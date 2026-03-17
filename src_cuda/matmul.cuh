@@ -18,6 +18,7 @@ void launchTiledMatmul(
     int M,
     int K,
     int N,
+    bool transA, bool transB,
     int batch_size,
     int num_batch_dims,
     const int* __restrict__ out_batch_shape,

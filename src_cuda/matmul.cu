@@ -44,6 +44,7 @@ __global__ void tiled_matmul_broadcast_kernel(
     int M,
     int K,
     int N,
+    bool transA, bool transB,
     int num_batch_dims,
     const int* __restrict__ out_batch_shape,
     const int* __restrict__ a_batch_strides, // Pre-computed (0 if broadcasted)
@@ -80,16 +81,22 @@ __global__ void tiled_matmul_broadcast_kernel(
     for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t) {
         
         // Load tiles into shared memory (with boundary checks)
-        if (row < M && (t * TILE_SIZE + tx) < K)
-            tileA[ty][tx] = A[offsetA + row * K + t * TILE_SIZE + tx];
-        else
+        int k_index = t * TILE_SIZE + tx;
+        if (row < M && (t * TILE_SIZE + tx) < K) {
+            int idxA = transA ? (k_index * M + row) : (row * K + k_index);
+            // printf("k_index: %d, idxA: %d, value: %f\n", k_index, idxA, A[offsetA + idxA]);
+            tileA[ty][tx] = A[offsetA + idxA];
+        } else {
             tileA[ty][tx] = 0.0f;
+        }
 
-        if (col < N && (t * TILE_SIZE + ty) < K)
-            tileB[ty][tx] = B[offsetB + (t * TILE_SIZE + ty) * N + col];
-        else
+        int k_index_B = t * TILE_SIZE + ty;
+        if (col < N && (t * TILE_SIZE + ty) < K) {
+            int idxB = transB ? (col * K + k_index_B) : (k_index_B * N + col);
+            tileB[ty][tx] = B[offsetB + idxB];
+        } else {
             tileB[ty][tx] = 0.0f;
-
+        }
         // Wait for all threads to finish loading
         __syncthreads();
 
@@ -128,6 +135,7 @@ void launchTiledMatmul(
     int M,
     int K,
     int N,
+    bool transA, bool transB,
     int batch_size,
     int num_batch_dims,
     const int* __restrict__ out_batch_shape,
@@ -137,13 +145,14 @@ void launchTiledMatmul(
 ) {
     dim3 blockDim(ThreadsPerBlock_x, ThreadsPerBlock_y);
     dim3 gridDim(
-        cuda::ceil_div(M, ThreadsPerBlock_x),
-        cuda::ceil_div(N, ThreadsPerBlock_y),
+        cuda::ceil_div(transA ? K : M, ThreadsPerBlock_x),
+        cuda::ceil_div(transB ? K : N, ThreadsPerBlock_y),
         batch_size
     );
     tiled_matmul_broadcast_kernel<<<gridDim, blockDim>>>(
         A, B, C,
         M, K, N,
+        transA, transB,
         num_batch_dims, out_batch_shape, a_batch_strides, b_batch_strides, c_batch_strides
     );
 }

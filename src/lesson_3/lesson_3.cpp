@@ -39,13 +39,25 @@ void tensor_matmul_naive_test() {
 void tensor_matmul_test() {
     std::cout << "Tensor Matmul Test" << std::endl;
     
-    auto A = Tensor::create_random({1, 3, 256, 256});
+    auto A = Tensor::arrange_contiguous({1, 3, 250, 256});
     A->prepare_for_gpu_work();
-    auto B = Tensor::create_random({3, 1, 256, 256});
+    auto B = Tensor::arrange_contiguous({3, 1, 245, 256});
     B->prepare_for_gpu_work();
-    auto C_cpu = MatmulOperation::matmul_cpu(*A, *B);
-    auto C = MatmulOperation::matmul_nd(*A, *B);
+    // std::cout << "A: " << std::endl;
+    // A->print(true);
+    // A->print();
+    // std::cout << "B: " << std::endl;
+    // B->print(true);
+    // B->print();
+    auto C_cpu = MatmulOperation::matmul_cpu(*A, *B, false, true);
+    auto C = MatmulOperation::matmul_nd(*A, *B, false, true);
     C->copy_to_host();
+    std::cout << "C: " << std::endl;
+    // C->print(true);
+    // C->print();
+    // std::cout << "C_cpu: " << std::endl;
+    // C_cpu->print(true);
+    // C_cpu->print();
     if (*C == *C_cpu) {
         std::cout << "C == C_cpu" << std::endl;
     } else {

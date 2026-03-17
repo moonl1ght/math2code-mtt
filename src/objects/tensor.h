@@ -17,6 +17,14 @@ public:
         unsigned int seed = 0
     );
 
+    static std::unique_ptr<Tensor> arrange_contiguous(std::vector<int> shape) {
+        auto tensor = std::make_unique<Tensor>(shape);
+        for (int i = 0; i < tensor->_total_size; i++) {
+            tensor->_data[i] = static_cast<float>(i);
+        }
+        return tensor;
+    }
+
     static std::unique_ptr<Tensor> create_zeros(std::vector<int> shape) {
         auto tensor = std::make_unique<Tensor>(shape);
         for (int i = 0; i < tensor->_total_size; i++) {

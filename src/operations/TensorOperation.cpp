@@ -62,3 +62,17 @@ namespace TensorOperation {
         }
     }
 }
+
+float TensorOperation::cross_entropy_loss(
+    const Tensor& predictions, const std::vector<int>& labels
+) {
+    int batch_size = predictions.shape()[0];
+    int num_classes = predictions.shape()[1];
+    float loss = 0.0f;
+    for (int i = 0; i < batch_size; i++) {
+        for (int j = 0; j < num_classes; j++) {
+            loss -= std::log(predictions.get({ i, j })) * (labels[i] == j ? 1.0f : 0.0f);
+        }
+    }
+    return loss / batch_size;
+}
