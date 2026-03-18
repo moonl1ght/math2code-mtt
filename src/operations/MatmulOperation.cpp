@@ -48,7 +48,7 @@ MatmulOperation::MatmulInfo MatmulOperation::get_matmul_info(
     output_shape.push_back(transB ? K_B : N);
 
     int num_batch_dims = A.shape().size() - 2;
-    print_vector("output_shape", output_shape);
+    // print_vector("output_shape", output_shape);
     return { M, K_A, K_B, N, batch_size, num_batch_dims, output_shape };
 }
 

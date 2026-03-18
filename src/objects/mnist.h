@@ -15,6 +15,12 @@ public:
         std::vector<std::unique_ptr<Tensor>> images;
         // labels: shape [n], integer class 0-9
         std::vector<uint8_t> labels;
+
+        void prepare_for_gpu_work() {
+            for (auto& image : images) {
+                image->prepare_for_gpu_work();
+            }
+        }
     };
 
     // Load both images and labels from the binary files produced by download_mnist.py

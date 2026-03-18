@@ -145,8 +145,8 @@ void launchTiledMatmul(
 ) {
     dim3 blockDim(ThreadsPerBlock_x, ThreadsPerBlock_y);
     dim3 gridDim(
-        cuda::ceil_div(transA ? K : M, ThreadsPerBlock_x),
-        cuda::ceil_div(transB ? K : N, ThreadsPerBlock_y),
+        cuda::ceil_div(N, ThreadsPerBlock_x),
+        cuda::ceil_div(M, ThreadsPerBlock_y),
         batch_size
     );
     tiled_matmul_broadcast_kernel<<<gridDim, blockDim>>>(
