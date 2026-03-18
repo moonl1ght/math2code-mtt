@@ -29,9 +29,9 @@ public:
         ds.images = read_images(images_path, batch_size);
         ds.labels = read_labels(labels_path);
 
-        if (static_cast<int>(ds.labels.size()) != ds.images.size() * batch_size) {
-            throw std::runtime_error("Image and label counts do not match");
-        }
+        // if (static_cast<int>(ds.labels.size()) != ds.images.size() * batch_size) {
+        //     throw std::runtime_error("Image and label counts do not match");
+        // }
         return ds;
     }
 

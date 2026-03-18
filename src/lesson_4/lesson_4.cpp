@@ -54,7 +54,17 @@ void mnist_train() {
     print_vector("Test data images", test_data.images[0]->shape());
     auto predictions = model.predict(*test_data.images[0]);
     print_vector("Predictions", predictions);
-    std::cout << "Label: " << test_data.labels[0] << std::endl;
+    int label_count = test_data.labels.size();
+    int correct_count = 0;
+    for (int i = 0; i < batch_size; i++) {
+        if (predictions[i] == static_cast<int>(test_data.labels[i])) {
+            correct_count++;
+        }
+    }
+    std::cout << "Correct count: " << correct_count << std::endl;
+    std::cout << "Accuracy: " << (float)correct_count / batch_size << std::endl;
+    int label = static_cast<int>(test_data.labels[0]);
+    std::cout << "Label: " << label << std::endl;
 }
 
 void mnist_test_train() {
